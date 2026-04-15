@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "Audio Uploader",
+  "version": "1.0",
+  "description": "Upload audio to chat on corp.express",
+  "permissions": [
+    "https://corp.express/*",
+    "activeTab",
+    "microphone"
+  ],
+  "browser_action": {
+    "default_title": "Audio Uploader",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://corp.express/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
