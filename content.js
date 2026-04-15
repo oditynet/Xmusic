@@ -103,6 +103,45 @@ script.textContent = `
         return false;
     }
 
+    // Функция ожидания исчезновения спиннера
+    function waitForSpinnerToDisappear() {
+        return new Promise((resolve) => {
+            // Функция проверки наличия спиннера
+            function isSpinnerPresent() {
+                const spinner = document.querySelector('circle[stroke-opacity="0.5"][cx="18"][cy="18"][r="18"]');
+                const animatedPath = document.querySelector('path animateTransform[type="rotate"]');
+                return spinner !== null || animatedPath !== null;
+            }
+            
+            // Если спиннера нет сразу, отправляем
+            if (!isSpinnerPresent()) {
+                resolve();
+                return;
+            }
+            
+            // Создаём MutationObserver для отслеживания изменений в DOM
+            const observer = new MutationObserver(() => {
+                if (!isSpinnerPresent()) {
+                    observer.disconnect();
+                    resolve();
+                }
+            });
+            
+            // Наблюдаем за изменениями во всём документе
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true
+            });
+            
+            // Таймаут на всякий случай (максимум 30 секунд)
+            setTimeout(() => {
+                observer.disconnect();
+                resolve();
+            }, 30000);
+        });
+    }
+
     async function processFile(file) {
         try {
             showNotification('🎵 Загрузка аудио', \`Файл: \${file.name}\`, 2);
@@ -133,14 +172,15 @@ script.textContent = `
             };
             
             source.onended = () => {
-                showNotification('🎙️ Остановка записи', 'Завершение микрофона...', 2.5);
+                showNotification('🎙️ Остановка записи', 'Завершение микрофона...', 2);
                 
                 setTimeout(() => {
                     const stopClicked = clickStopMicrophoneButton();
                     if (stopClicked) {
-                        showNotification('⏹️ Микрофон остановлен', 'Ожидание 4 секунду...', 1);
+                        showNotification('⏹️ Микрофон остановлен', 'Ожидание обработки...', 2);
                         
-                        setTimeout(() => {
+                        // Ждём исчезновения спиннера
+                        waitForSpinnerToDisappear().then(() => {
                             const sendClicked = clickSendButton();
                             if (sendClicked) {
                                 showNotification('📤 Отправлено!', \`Трек "\${file.name}" отправлен в чат\`, 3);
@@ -148,11 +188,11 @@ script.textContent = `
                             } else {
                                 showNotification('❌ Ошибка', 'Кнопка отправки не найдена', 2);
                             }
-                        }, 4000);
+                        });
                     } else {
                         showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2);
                     }
-                }, 5000);
+                }, 500);
             };
             
             source.start();
