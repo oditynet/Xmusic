@@ -64,9 +64,9 @@ script.textContent = `
         notification.appendChild(progressBar);
         document.body.appendChild(notification);
         
-        setTimeout(() => {
+        setTimeout(function() {
             notification.style.animation = 'slideOut 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(function() { notification.remove(); }, 300);
         }, duration * 1000);
     }
 
@@ -76,63 +76,254 @@ script.textContent = `
         return \`\${mins}:\${secs.toString().padStart(2, '0')}\`;
     }
 
-    // Функция для вставки имени файла в поле ввода
-function insertTextIntoInput(text) {
-    const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
-    
-    if (!editor) {
-        console.log('Editor not found');
-        return false;
-    }
-    
-    editor.focus();
-    
-    editor.innerHTML = '';
-    
-    // Симулируем ввод по одному символу
-    for (let char of text) {
-        const keydownEvent = new KeyboardEvent('keydown', {
-            key: char,
-            code: 'Key' + char.toUpperCase(),
-            bubbles: true,
-            cancelable: true
+/*    function insertTextIntoInput(text) {
+        return new Promise(function(resolve) {
+            const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
+            
+            if (!editor) {
+                console.log('Editor not found');
+                resolve(false);
+                return;
+            }
+            
+            editor.focus();
+            //editor.innerHTML = '';
+            const range = document.createRange();
+        range.selectNodeContents(editor);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+            
+            document.execCommand('insertText', false, text);
+            
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            editor.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            setTimeout(function() { resolve(true); }, 300);
         });
-        
-        const keypressEvent = new KeyboardEvent('keypress', {
-            key: char,
-            code: 'Key' + char.toUpperCase(),
-            bubbles: true,
-            cancelable: true
-        });
-        
-        const inputEvent = new InputEvent('beforeinput', {
-            bubbles: true,
-            cancelable: true,
-            inputType: 'insertText',
-            data: char
-        });
-        
-        editor.dispatchEvent(keydownEvent);
-        editor.dispatchEvent(keypressEvent);
-        editor.dispatchEvent(inputEvent);
-        
-        // Вставляем символ
-        document.execCommand('insertText', false, char);
-        
-        const keyupEvent = new KeyboardEvent('keyup', {
-            key: char,
-            code: 'Key' + char.toUpperCase(),
-            bubbles: true,
-            cancelable: true
-        });
-        editor.dispatchEvent(keyupEvent);
-    }
+    }*/
     
-    return true;
+/*    function insertTextIntoInput(text) {
+    return new Promise(function(resolve) {
+        //const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
+        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-string="true"]');
+        
+        if (!editor) {
+            console.log('Editor not found');
+            resolve(false);
+            return;
+        }
+        
+        editor.focus();
+        // Выделяем всё содержимое
+        //const range = document.createRange();
+        //range.selectNodeContents(editor);
+        //const selection = window.getSelection();
+        //selection.removeAllRanges();
+        //selection.addRange(range);
+        
+        //editor.click();
+        
+        // Очищаем поле через Ctrl+A и Delete
+        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+        
+        // Небольшая пауза
+        setTimeout(function() {
+            // Имитируем ввод каждого символа
+            let i = 0;
+            function typeChar() {
+                if (i < text.length) {
+                    const char = text[i];
+                    
+                    // Реалистичная имитация нажатия клавиши
+                    editor.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
+                    editor.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
+                    editor.dispatchEvent(new InputEvent('beforeinput', { 
+                        inputType: 'insertText', 
+                        data: char, 
+                        bubbles: true 
+                    }));
+                    
+                    // Вставка символа
+                    document.execCommand('insertText', false, char);
+                    
+                    editor.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    i++;
+                    setTimeout(typeChar,10); // Задержка 50мс между символами
+                } else {
+                    editor.dispatchEvent(new Event('change', { bubbles: true }));
+                    resolve(true);
+                }
+            }
+            typeChar();
+        }, 200);
+    });
+}*/
+
+
+/*function insertTextIntoInput(text) {
+    return new Promise(function(resolve) {
+        // Находим редактор
+        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"]');
+        
+        if (!editor) {
+            console.log('Editor not found');
+            resolve(false);
+            return;
+        }
+        
+        editor.focus();
+        editor.click();
+        
+        // Находим span для текста
+        const textSpan = editor.querySelector('[data-slate-node="text"]');
+        
+        if (!textSpan) {
+            console.log('Text span not found');
+            resolve(false);
+            return;
+        }
+        
+        // Очищаем содержимое textSpan
+        textSpan.innerHTML = '';
+        
+        // Создаём правильную структуру с текстом
+        const leafSpan = document.createElement('span');
+        leafSpan.setAttribute('data-slate-leaf', 'true');
+        
+        const innerSpan = document.createElement('span');
+        const stringSpan = document.createElement('span');
+        stringSpan.setAttribute('data-slate-string', 'true');
+        stringSpan.textContent = text;
+        
+        innerSpan.appendChild(stringSpan);
+        leafSpan.appendChild(innerSpan);
+        
+        // Добавляем zero-width space
+        const zeroSpan = document.createElement('span');
+        zeroSpan.setAttribute('data-slate-zero-width', 'n');
+        zeroSpan.setAttribute('data-slate-length', '0');
+        zeroSpan.innerHTML = '<br>';
+        
+        innerSpan.appendChild(zeroSpan);
+        
+        textSpan.appendChild(leafSpan);
+        
+        // Триггерим события
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        editor.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        setTimeout(function() { resolve(true); }, 200);
+    });
+}*/
+
+/*function insertTextIntoInput(text) {
+    return new Promise((resolve) => {
+        // 1. Находим нужное поле
+        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
+        
+        if (!editor) {
+            console.log('Поле не найдено');
+            resolve(false);
+            return;
+        }
+        
+        // 2. Фокусируемся на поле
+        editor.focus();
+        editor.click();
+        
+        // 3. Очищаем поле (выделяем всё и удаляем)
+        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+        
+        // 4. Небольшая задержка перед вставкой
+        setTimeout(() => {
+            // 5. Вставляем текст
+            document.execCommand('insertText', false, text);
+            
+            // 6. Сообщаем странице, что поле изменилось
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            resolve(true);
+        }, 50);
+    });
 }
- // Функция ожидания исчезновения спиннера и появления поля ввода
+*/
+/*function insertTextIntoInput(text) {
+    return new Promise((resolve) => {
+        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
+        
+        if (!editor) {
+            console.log('Поле не найдено');
+            resolve(false);
+            return;
+        }
+        
+        // Фокусируемся
+        editor.focus();
+        editor.click();
+        
+        // Очищаем всё содержимое
+        editor.innerHTML = '';
+        
+        // Вставляем текст
+        document.execCommand('insertText', false, text);
+        
+        // События для Slate/React
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        editor.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        resolve(true);
+    });
+}*/
+
+function insertTextIntoInput(text) {
+    return new Promise((resolve) => {
+        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
+        
+        if (!editor) {
+            console.log('Editor not found');
+            resolve(false);
+            return;
+        }
+        
+        // Находим leaf span
+        const leafSpan = editor.querySelector('[data-slate-leaf="true"]');
+        
+        if (!leafSpan) {
+            console.log('Leaf span not found');
+            resolve(false);
+            return;
+        }
+        
+        // Очищаем содержимое leafSpan
+        while (leafSpan.firstChild) {
+            leafSpan.removeChild(leafSpan.firstChild);
+        }
+        
+        // Создаём новый string span с текстом
+        const stringSpan = document.createElement('span');
+        stringSpan.setAttribute('data-slate-string', 'true');
+        stringSpan.textContent = text;
+        
+        // Добавляем в leafSpan
+        leafSpan.appendChild(stringSpan);
+        
+        // Фокус и события
+        editor.focus();
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        editor.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        resolve(true);
+    });
+}
+
+
     function waitForSpinnerToDisappearAndEditorReady() {
-        return new Promise((resolve) => {
+        return new Promise(function(resolve) {
             function isSpinnerPresent() {
                 const spinner = document.querySelector('circle[stroke-opacity="0.5"][cx="18"][cy="18"][r="18"]');
                 const animatedPath = document.querySelector('path animateTransform[type="rotate"]');
@@ -144,14 +335,12 @@ function insertTextIntoInput(text) {
                 return editor !== null;
             }
             
-            // 2. Проверка готовности редактора
             if (!isSpinnerPresent() && isEditorReady()) {
                 setTimeout(resolve, 500);
                 return;
             }
             
-            // 3. Если спиннера НЕТ и редактор ГОТОВ - сразу завершаем
-            const observer = new MutationObserver(() => {
+            const observer = new MutationObserver(function() {
                 if (!isSpinnerPresent() && isEditorReady()) {
                     observer.disconnect();
                     setTimeout(resolve, 500);
@@ -164,7 +353,7 @@ function insertTextIntoInput(text) {
                 attributes: true
             });
             
-            setTimeout(() => {
+            setTimeout(function() {
                 observer.disconnect();
                 resolve();
             }, 10000);
@@ -198,52 +387,11 @@ function insertTextIntoInput(text) {
         return false;
     }
 
-    // Функция ожидания исчезновения спиннера
-    /*function waitForSpinnerToDisappear() {
-        return new Promise((resolve) => {
-            // Функция проверки наличия спиннера
-            function isSpinnerPresent() {
-                const spinner = document.querySelector('circle[stroke-opacity="0.5"][cx="18"][cy="18"][r="18"]');
-                const animatedPath = document.querySelector('path animateTransform[type="rotate"]');
-                return spinner !== null || animatedPath !== null;
-            }
-            
-            // Если спиннера нет сразу, отправляем
-            if (!isSpinnerPresent()) {
-                resolve();
-                return;
-            }
-            
-            // Создаём MutationObserver для отслеживания изменений в DOM
-            const observer = new MutationObserver(() => {
-                if (!isSpinnerPresent()) {
-                    observer.disconnect();
-                    resolve();
-                }
-            });
-            
-            // Наблюдаем за изменениями во всём документе
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: true
-            });
-            
-            // Таймаут на всякий случай (максимум 10 секунд)
-            setTimeout(() => {
-                observer.disconnect();
-                resolve();
-            }, 10000);
-        });
-    }*/
-
     let currentFileName = null;
 
     async function processFile(file) {
         try {
             currentFileName = file.name;
-            
-            //showNotification('Загрузка аудио', \`Файл: \${file.name}\`, 2);
             
             const audioContext = new AudioContext();
             await audioContext.resume();
@@ -262,69 +410,60 @@ function insertTextIntoInput(text) {
             source.connect(destination);
             
             const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
-            navigator.mediaDevices.getUserMedia = async (constraints) => {
+            navigator.mediaDevices.getUserMedia = async function(constraints) {
                 if (constraints.audio) {
-                //    showNotification('🎙️ Подмена микрофона', 'Возвращаем аудио из файла', 1);
                     return destination.stream;
                 }
                 return originalGetUserMedia(constraints);
             };
             
-            source.onended = () => {
-                //showNotification('🎙️ Остановка записи', 'Завершение микрофона...', 2);
-                
-                setTimeout(() => {
+            source.onended = function() {
+                setTimeout(function() {
                     const stopClicked = clickStopMicrophoneButton();
                     if (stopClicked) {
-                        //showNotification('⏹️ Микрофон остановлен', 'Ожидание обработки...', 2);
                         
-                        // Ждём исчезновения спиннера
-                        waitForSpinnerToDisappearAndEditorReady().then(() => {
-                            setTimeout(() => {
+                        waitForSpinnerToDisappearAndEditorReady()
+                            .then(function() {
                                 if (currentFileName) {
-                                    insertTextIntoInput(currentFileName);
+                                    return insertTextIntoInput(currentFileName);
                                 }
-                                
-                                const sendClicked = clickSendButton();
-                                if (sendClicked) {
-                                    showNotification('Отправлено!', \`Трек "\${file.name}" отправлен в чат\`, 3);
-                                    navigator.mediaDevices.getUserMedia = originalGetUserMedia;
-                                    currentFileName = null;
-                                } else {
-                                    showNotification('❌ Ошибка', 'Кнопка отправки не найдена', 2);
-                                }
-                            }, 600);
-                        });
+                            })
+                            .then(function() {
+                                setTimeout(function() {
+                                    const sendClicked = clickSendButton();
+                                    if (sendClicked) {
+                                        showNotification('Отправлено!', 'Трек "' + file.name + '" отправлен в чат', 3);
+                                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+                                        currentFileName = null;
+                                    } else {
+                                        showNotification('❌ Ошибка', 'Кнопка отправки не найдена', 2);
+                                    }
+                                }, 500);
+                            });
+                        
                     } else {
                         showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2);
                     }
-                }, 500);
+                }, 1000);
             };
-            
             
             source.start();
             
-            setTimeout(() => {
-                const micClicked = clickMicrophoneButton();
-                /*if (micClicked) {
-                    showNotification('🎤 Микрофон активирован', \`Воспроизведение: \${durationStr}\`, 2);
-                } else {
-                    showNotification('❌ Ошибка', 'Кнопка микрофона не найдена', 2);
-                }*/
-            }, 700);
+            setTimeout(function() {
+                clickMicrophoneButton();
+            }, 500);
             
         } catch (err) {
             showNotification('❌ Ошибка', err.message, 3);
         }
     }
 
-    // Создаем кнопку на странице
     const btn = document.createElement('button');
     btn.innerHTML = '🎵';
     btn.title = 'Выбрать аудио';
     btn.style.cssText = \`
         position: fixed;
-        bottom: 50px;
+        bottom: 80px;
         right: 20px;
         width: 55px;
         height: 55px;
@@ -338,28 +477,26 @@ function insertTextIntoInput(text) {
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         transition: transform 0.2s;
     \`;
-    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-    btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+    btn.onmouseenter = function() { btn.style.transform = 'scale(1.1)'; };
+    btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; };
 
-    // Создаем input для выбора файла
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'audio/*';
     fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
 
-    fileInput.onchange = async (e) => {
+    fileInput.onchange = async function(e) {
         const file = e.target.files[0];
         if (file) {
             await processFile(file);
         }
     };
 
-    btn.onclick = async () => {
+    btn.onclick = async function() {
         try {
-            // Запрашиваем разрешение на микрофон
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => track.stop());
+            stream.getTracks().forEach(function(track) { track.stop(); });
             fileInput.click();
         } catch (err) {
             showNotification('Ошибка', 'Нет доступа к микрофону. Разрешите в настройках', 3);
@@ -367,7 +504,7 @@ function insertTextIntoInput(text) {
     };
 
     document.body.appendChild(btn);
-    showNotification('Аудио-помощник', 'Нажмите на кнопку 🎵внизу справа', 3);
+    showNotification('Аудио-помощник', 'Нажмите на кнопку 🎵 внизу справа', 3);
 })();
 `;
 
