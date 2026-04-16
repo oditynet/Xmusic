@@ -78,7 +78,7 @@ script.textContent = `
 
     // Функция для вставки имени файла в поле ввода
 function insertTextIntoInput(text) {
-    const editor = document.querySelector('[data-slate-editor="true"]');
+    const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
     
     if (!editor) {
         console.log('Editor not found');
@@ -86,6 +86,8 @@ function insertTextIntoInput(text) {
     }
     
     editor.focus();
+    
+    editor.innerHTML = '';
     
     // Симулируем ввод по одному символу
     for (let char of text) {
@@ -298,6 +300,7 @@ function insertTextIntoInput(text) {
                     }
                 }, 500);
             };
+            
             
             source.start();
             
