@@ -1,0 +1,97 @@
+1)
+
+function findStore() {
+    // Способ 1: Стандартный для React 18 с createRoot
+    try {
+        const rootKey = Object.keys(document.querySelector('#app')).find(key => key.startsWith('__reactContainer'));
+        if (rootKey) {
+            const fiber = document.querySelector('#app')[rootKey];
+            let node = fiber;
+            while (node) {
+                if (node.memoizedState?.element?.props?.store) {
+                    console.log('✅ Store найден через React 18 root!');
+                    return node.memoizedState.element.props.store;
+                }
+                node = node.child;
+            }
+        }
+    } catch (e) {}
+
+    // Способ 2: Поиск по всем глобальным переменным
+    const possibleNames = ['store', '__store', '__REDUX_STORE__', '__REACT_DEVTOOLS_GLOBAL_HOOK__'];
+    for (let name in window) {
+        if (possibleNames.includes(name) || (window[name] && typeof window[name].dispatch === 'function' && typeof window[name].getState === 'function')) {
+            console.log('✅ Store найден в window.' + name);
+            return window[name];
+        }
+    }
+
+    // Способ 3: Через Redux DevTools (если подключены)
+    if (window.__REDUX_DEVTOOLS_EXTENSION__) {
+        console.log('ℹ️ Redux DevTools найдены, но store не вычислен. Попробуйте открыть вкладку Redux.');
+    }
+
+    console.error('❌ Не удалось найти Store автоматически.');
+    return null;
+}
+
+const STORE = findStore();
+if (STORE) {
+    window.__store = STORE;
+    console.log('Store успешно сохранен в window.__store');
+} else {
+    console.log('Попробуйте вручную: откройте React DevTools -> Выделите <Provider> -> Сохраните $r.store');
+}
+
+
+2)
+
+
+// Проверяем store
+if (!window.__store) {
+    console.error(' Store не найден!');
+} else {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        // Имитируем полную мета-информацию, которую создает функция getFileMeta в коде
+        // (взято из модуля 83486, компонент Attachments)
+        const fileMeta = {
+            // Основные поля
+            name: file.name,
+            type: file.type,
+            file: file,
+            // ВАЖНО: Эти флаги отвечают за отображение правильной иконки и плеера
+            isImage: false,
+            isVideo: false,
+            isDocument: false,
+            isVoice: true,  // <-- ГЛАВНЫЙ ФЛАГ ДЛЯ АУДИО
+            // Доп поля для совместимости
+            attachmentType: 'voice',
+            size: (file.size / 1048576).toFixed(2) + ' MB',
+            preview: null,
+            // Заглушки для безопасности
+            disallowToUploadReason: null,
+            isDisallowedToUploadFile: false
+        };
+        console.log(' Отправляем подготовленный аудио-объект:', fileMeta);
+        // Отправляем в Redux
+        window.__store.dispatch({
+            type: 'ADD_CURRENT_CHAT_ATTACHMENTS',
+            payload: { attachments: [fileMeta] }
+        });
+        // Дополнительно: иногда приложению нужно явно открыть панель вложений.
+        // Попробуем также установить флаг isAttachDialogOpen через другой экшен (если первый не сработает)
+        // Это не обязательно, но может помочь.
+        setTimeout(() => {
+            window.__store.dispatch({
+                type: 'SET_CURRENT_CHAT_ATTACHMENTS',
+                payload: { attachments: [fileMeta] }
+            });
+        }, 10);
+    };
+    input.click();
+}
