@@ -144,7 +144,7 @@ function insertTextIntoInput(text) {
             
             // 2. Проверка готовности редактора
             if (!isSpinnerPresent() && isEditorReady()) {
-                setTimeout(resolve, 700);
+                setTimeout(resolve, 500);
                 return;
             }
             
@@ -152,7 +152,7 @@ function insertTextIntoInput(text) {
             const observer = new MutationObserver(() => {
                 if (!isSpinnerPresent() && isEditorReady()) {
                     observer.disconnect();
-                    setTimeout(resolve, 700);
+                    setTimeout(resolve, 500);
                 }
             });
             
@@ -291,7 +291,7 @@ function insertTextIntoInput(text) {
                                 } else {
                                     showNotification('❌ Ошибка', 'Кнопка отправки не найдена', 2);
                                 }
-                            }, 700);
+                            }, 600);
                         });
                     } else {
                         showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2);
