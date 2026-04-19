@@ -1,4 +1,4 @@
-// ver 1.2 - fixed bug
+// ver 1.3 
 const script = document.createElement('script');
 script.textContent = `
 (function() {
@@ -22,12 +22,27 @@ script.textContent = `
                 from { width: 100%; }
                 to { width: 0%; }
             }
+            .music-duration-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                margin-left: 8px;
+                padding-left: 8px;
+                border-left: 1px solid rgba(255,255,255,0.3);
+                font-size: 12px;
+                font-weight: normal;
+                opacity: 0.8;
+            }
+            .music-duration-badge span {
+                font-family: monospace;
+            }
         \`;
         document.head.appendChild(style);
     }
 
-    function showNotification(title, message, duration) {
+    function showNotification(title, message, duration, isError = false) {
         const notification = document.createElement('div');
+        const borderColor = isError ? '#ef4444' : '#667eea';
         notification.style.cssText = \`
             position: fixed;
             top: 20px;
@@ -41,7 +56,7 @@ script.textContent = `
             z-index: 10000;
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             animation: slideIn 0.3s ease-out;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid \${borderColor};
             min-width: 280px;
             backdrop-filter: blur(10px);
         \`;
@@ -52,7 +67,7 @@ script.textContent = `
             bottom: 0;
             left: 0;
             height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, \${borderColor}, #764ba2);
             border-radius: 0 0 0 12px;
             animation: progressShrink \${duration}s linear forwards;
         \`;
@@ -76,165 +91,138 @@ script.textContent = `
         return \`\${mins}:\${secs.toString().padStart(2, '0')}\`;
     }
 
-    // ========== ФУНКЦИЯ ОЖИДАНИЯ (КОТОРОЙ НЕ БЫЛО) ==========
-/*    function waitForSpinnerToDisappearAndEditorReady() {
+    // ========== ДОБАВЛЕНИЕ ВРЕМЕНИ МУЗЫКИ РЯДОМ С ТАЙМЕРОМ ЗАПИСИ ==========
+    let musicDurationElement = null;
+    let currentMusicDuration = 0;
+
+    function addMusicDurationToRecordTime(durationSeconds) {
+        currentMusicDuration = durationSeconds;
+        const durationStr = formatDuration(durationSeconds);
+        
+        const recordTimeContainer = document.querySelector('.message-input__record-time');
+        
+        if (!recordTimeContainer) {
+            console.log('❌ Контейнер времени записи не найден');
+            return false;
+        }
+        
+        removeMusicDuration();
+        
+        musicDurationElement = document.createElement('span');
+        musicDurationElement.className = 'music-duration-badge';
+        musicDurationElement.innerHTML = \`🎵 <span>\${durationStr}</span>\`;
+        
+        recordTimeContainer.appendChild(musicDurationElement);
+        
+        console.log(\`✅ Добавлено время музыки: \${durationStr}\`);
+        return true;
+    }
+
+    function removeMusicDuration() {
+        if (musicDurationElement && musicDurationElement.parentNode) {
+            musicDurationElement.remove();
+        }
+        musicDurationElement = null;
+        currentMusicDuration = 0;
+    }
+
+    // ========== ФУНКЦИЯ ОЖИДАНИЯ ==========
+    function waitForSpinnerToDisappearAndEditorReady() {
         return new Promise((resolve) => {
-            console.log('⏳ Ждём готовности редактора...');
-            
-            // Ждём пока пропадёт спиннер загрузки (если есть)
             const checkSpinner = () => {
-                const spinner = document.querySelector('.spinner, .loader, [class*="loading"]');
-                if (!spinner || spinner.offsetParent === null) {
-                    console.log('✅ Спиннер не обнаружен или скрыт');
-                    // Даём ещё немного времени на стабилизацию DOM
+                const recordContainer = document.querySelector('.message-input__record');
+                const rotatingSvg = document.querySelector('svg.rotate');
+                
+                if (!recordContainer && !rotatingSvg) {
+                    console.log('✅ Обработка завершена — спиннер исчез!');
                     setTimeout(resolve, 500);
                 } else {
                     console.log('⏳ Спиннер ещё виден, ждём...');
-                    setTimeout(checkSpinner, 200);
+                    setTimeout(checkSpinner, 300);
                 }
             };
-            
             checkSpinner();
         });
     }
-*/
 
-function waitForSpinnerToDisappearAndEditorReady() {
-    return new Promise((resolve) => {
-    //    console.log('⏳ Ждём окончания обработки аудио...');
-        
-        const checkSpinner = () => {
-            // Ищем контейнер записи с таймером и крутящимся SVG
-            const recordContainer = document.querySelector('.message-input__record');
-            const rotatingSvg = document.querySelector('svg.rotate');
+    function insertTextIntoInput(text) {
+        return new Promise((resolve) => {
+            console.log('=== ВСТАВКА ТЕКСТА В ПОЛЕ СООБЩЕНИЯ ===');
             
-            if (!recordContainer && !rotatingSvg) {
-                console.log('✅ Обработка завершена — спиннер исчез!');
-                // Даём ещё 500 мс на стабилизацию DOM
-                setTimeout(resolve, 500);
-            } else {
-                console.log('⏳ Спиннер ещё виден, ждём...');
-                setTimeout(checkSpinner, 300);
-            }
-        };
-        
-        checkSpinner();
-    });
-}
-
-function insertTextIntoInput(text) {
-    return new Promise((resolve) => {
-        console.log('=== ВСТАВКА ТЕКСТА В ПОЛЕ СООБЩЕНИЯ ===');
-        console.log('Текст:', text);
-        
-        // Ищем редактор
-        const editor = document.querySelector('.message-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
-        
-        if (!editor) {
-            console.log('❌ Редактор не найден');
-            resolve(false);
-            return;
-        }
-        
-        // Подсветка
-        //editor.style.outline = '4px solid blue';
-        //editor.style.boxShadow = '0 0 20px blue';
-        //setTimeout(() => { editor.style.outline = ''; editor.style.boxShadow = ''; }, 2000);
-        
-        // Фокусируемся
-        editor.focus();
-        
-        // ===== ПОЛНАЯ ОЧИСТКА =====
-        // Находим все span с data-slate-string и удаляем их содержимое
-        const stringSpans = editor.querySelectorAll('[data-slate-string="true"]');
-        stringSpans.forEach(span => span.textContent = '');
-        
-        // Также очищаем все текстовые узлы
-        editor.childNodes.forEach(node => {
-            if (node.nodeType === Node.TEXT_NODE) {
-                node.textContent = '';
-            }
-        });
-        
-        // Удаляем все дочерние элементы кроме Slate-структуры
-        const slateBlock = editor.querySelector('[data-slate-object="block"]');
-        if (slateBlock) {
-            const leafSpan = slateBlock.querySelector('[data-slate-leaf="true"]');
-            if (leafSpan) {
-                // Очищаем leafSpan
-                leafSpan.innerHTML = '';
-                // Создаём новый data-slate-string
-                const newStringSpan = document.createElement('span');
-                newStringSpan.setAttribute('data-slate-string', 'true');
-                leafSpan.appendChild(newStringSpan);
-            }
-        }
-        
-        // Даём время на очистку
-        setTimeout(() => {
-            // Находим span для вставки текста
-            const targetSpan = editor.querySelector('[data-slate-string="true"]');
+            const editor = document.querySelector('.message-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
             
-            if (targetSpan) {
-                // Вставляем текст напрямую в data-slate-string
-                targetSpan.textContent = text;
-                //console.log('✅ Текст вставлен в существующий span');
-            } else {
-                // Запасной вариант - создаём структуру заново
-                const leafSpan = editor.querySelector('[data-slate-leaf="true"]');
+            if (!editor) {
+                console.log('❌ Редактор не найден');
+                resolve(false);
+                return;
+            }
+            
+            editor.focus();
+            
+            const stringSpans = editor.querySelectorAll('[data-slate-string="true"]');
+            stringSpans.forEach(span => span.textContent = '');
+            
+            editor.childNodes.forEach(node => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    node.textContent = '';
+                }
+            });
+            
+            const slateBlock = editor.querySelector('[data-slate-object="block"]');
+            if (slateBlock) {
+                const leafSpan = slateBlock.querySelector('[data-slate-leaf="true"]');
                 if (leafSpan) {
                     leafSpan.innerHTML = '';
-                    const newSpan = document.createElement('span');
-                    newSpan.setAttribute('data-slate-string', 'true');
-                    newSpan.textContent = text;
-                    leafSpan.appendChild(newSpan);
-                //    console.log('✅ Создан новый span с текстом');
-                } else {
-                    // Если совсем ничего не нашли - просто вставляем через execCommand
-                    document.execCommand('insertText', false, text);
-                    console.log('✅ Текст вставлен через execCommand');
+                    const newStringSpan = document.createElement('span');
+                    newStringSpan.setAttribute('data-slate-string', 'true');
+                    leafSpan.appendChild(newStringSpan);
                 }
             }
             
-            // Триггерим события для Slate
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
-            editor.dispatchEvent(new Event('change', { bubbles: true }));
-            editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-            editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-            
-            //console.log('✅ Итоговое содержимое:', editor.textContent);
-            //showNotification('✅ Текст вставлен', text, 2);
-            
-            resolve(true);
-        }, 150);
-    });
-}
+            setTimeout(() => {
+                const targetSpan = editor.querySelector('[data-slate-string="true"]');
+                
+                if (targetSpan) {
+                    targetSpan.textContent = text;
+                } else {
+                    const leafSpan = editor.querySelector('[data-slate-leaf="true"]');
+                    if (leafSpan) {
+                        leafSpan.innerHTML = '';
+                        const newSpan = document.createElement('span');
+                        newSpan.setAttribute('data-slate-string', 'true');
+                        newSpan.textContent = text;
+                        leafSpan.appendChild(newSpan);
+                    } else {
+                        document.execCommand('insertText', false, text);
+                    }
+                }
+                
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                editor.dispatchEvent(new Event('change', { bubbles: true }));
+                editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                
+                resolve(true);
+            }, 150);
+        });
+    }
+
     function clickMicrophoneButton() {
         console.log('Ищем кнопку микрофона...');
-        
         const buttons = document.querySelectorAll('button.icon-button:not(.icon-button--bg)');
         for (let btn of buttons) {
             const svg = btn.querySelector('svg');
             if (svg && svg.getAttribute('viewBox') === '0 0 24 24') {
-                //console.log('✅ Нашли кнопку микрофона');
-                
-                // Подсветка
-                //btn.style.outline = '4px solid orange';
-                //btn.style.boxShadow = '0 0 20px orange';
-                //setTimeout(() => { btn.style.outline = ''; btn.style.boxShadow = ''; }, 3000);
-                
                 btn.click();
                 return true;
             }
         }
-        
         console.log('❌ Кнопка микрофона не найдена');
         return false;
     }
 
     function clickStopMicrophoneButton() {
         console.log('Ищем кнопку остановки микрофона...');
-        
         const accentIcons = document.querySelectorAll('.icon-button__icon--accent');
         for (let icon of accentIcons) {
             const svg = icon.querySelector('svg');
@@ -243,77 +231,33 @@ function insertTextIntoInput(text) {
                 if (whitePath) {
                     const parentBtn = icon.closest('button');
                     if (parentBtn) {
-                        console.log('✅ Нашли кнопку остановки');
-                        
-                        // Подсветка зелёным
-                        //parentBtn.style.outline = '4px solid green';
-                        //parentBtn.style.boxShadow = '0 0 20px green';
-                        //setTimeout(() => { parentBtn.style.outline = ''; parentBtn.style.boxShadow = ''; }, 3000);
-                        
                         parentBtn.click();
                         return true;
                     }
                 }
             }
         }
-        
         console.log('❌ Кнопка остановки не найдена');
         return false;
     }
 
     function clickSendButton() {
-        console.log('🔍 Ищем кнопку отправки...');
-        
-        // Ищем кнопку отправки
         const sendBtn = document.querySelector('.message-input__actions button.icon-button');
-        
-        if (!sendBtn) {
-            console.log('❌ Кнопка отправки не найдена');
-            return false;
-        }
-        
-        // === ПОДСВЕТКА КРАСНЫМ ===
-        //sendBtn.style.outline = '4px solid red';
-        //sendBtn.style.boxShadow = '0 0 20px red';
-        //sendBtn.style.zIndex = '999999';
-        
-        //console.log('🔴 Кнопка отправки подсвечена красным!');
-        
-        /*setTimeout(() => {
-            sendBtn.style.outline = '';
-            sendBtn.style.boxShadow = '';
-        }, 5000);
-        */
-        // Проверяем состояние кнопки
-        console.log('Состояние кнопки:', {
-            disabled: sendBtn.disabled,
-            visible: sendBtn.offsetParent !== null,
-            classList: sendBtn.className
-        });
-        
-        // Пробуем нажать
+        if (!sendBtn) return false;
         sendBtn.click();
         sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        
-        //console.log('✅ Клик по кнопке отправлен');
         return true;
     }
 
-    // ========== ОЖИДАНИЕ АКТИВНОСТИ КНОПКИ ОТПРАВКИ ==========
     function waitForSendButtonActive(timeout = 5000) {
         return new Promise((resolve) => {
             const start = Date.now();
             const check = () => {
                 const btn = document.querySelector('.message-input__actions button.icon-button');
-                
-                // Проверяем, что кнопка есть и не disabled
                 const isActive = btn && !btn.disabled && btn.offsetParent !== null;
-                
                 if (isActive) {
-                    //console.log('✅ Кнопка отправки активна!');
                     resolve(btn);
                 } else if (Date.now() - start > timeout) {
-                    //console.log('⚠️ Таймаут ожидания кнопки отправки');
                     resolve(null);
                 } else {
                     setTimeout(check, 100);
@@ -323,101 +267,137 @@ function insertTextIntoInput(text) {
         });
     }
 
-    let currentFileName = null;
+    // ========== ОЧЕРЕДЬ ФАЙЛОВ ==========
+    let fileQueue = [];
+    let isProcessing = false;
+    let originalGetUserMedia = null;
+
+    async function processQueue() {
+        if (isProcessing) return;
+        if (fileQueue.length === 0) return;
+        
+        isProcessing = true;
+        const file = fileQueue.shift();
+        
+        showNotification('📁 Обработка файла', \`Осталось в очереди: \${fileQueue.length}\`, 2);
+        
+        try {
+            await processFile(file);
+        } catch (err) {
+            showNotification('❌ Ошибка', \`\${file.name}: \${err.message}\`, 3, true);
+        }
+        
+        isProcessing = false;
+        
+        // Небольшая задержка перед следующим файлом
+        setTimeout(() => {
+            processQueue();
+        }, 2000);
+    }
 
     async function processFile(file) {
-        try {
-            currentFileName = file.name;
-            
-            const audioContext = new AudioContext();
-            await audioContext.resume();
-            
-            const arrayBuffer = await file.arrayBuffer();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
-            const duration = audioBuffer.duration;
-            const durationStr = formatDuration(duration);
-            
-            showNotification('🎵 Загрузка аудио', \`Длительность: \${durationStr}\`, 2);
-            
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            const destination = audioContext.createMediaStreamDestination();
-            source.connect(destination);
-            
-            const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
-            navigator.mediaDevices.getUserMedia = async function(constraints) {
-                if (constraints.audio) {
-                    return destination.stream;
-                }
-                return originalGetUserMedia(constraints);
-            };
-            
-            source.onended = async function() {
-                console.log('🎵 Аудио закончилось, останавливаем запись...');
+        return new Promise(async (resolve, reject) => {
+            try {
+                const audioContext = new AudioContext();
+                await audioContext.resume();
                 
-                setTimeout(async function() {
-                    const stopClicked = clickStopMicrophoneButton();
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                const duration = audioBuffer.duration;
+                const durationStr = formatDuration(duration);
+                
+                showNotification('🎵 Загрузка аудио', \`"\${file.name}" (\${durationStr})\`, 2);
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                const destination = audioContext.createMediaStreamDestination();
+                source.connect(destination);
+                
+                originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+                navigator.mediaDevices.getUserMedia = async function(constraints) {
+                    if (constraints.audio) {
+                        return destination.stream;
+                    }
+                    return originalGetUserMedia(constraints);
+                };
+                
+                source.onended = async function() {
+                    console.log('🎵 Аудио закончилось, останавливаем запись...');
                     
-                    if (stopClicked) {
-                        console.log('✅ Кнопка остановки нажата');
+                    setTimeout(async function() {
+                        const stopClicked = clickStopMicrophoneButton();
                         
-                        // Ждём готовности редактора
-                        await waitForSpinnerToDisappearAndEditorReady();
-                        
-                        // Вставляем имя файла
-                        console.log('📝 Вставляем имя файла:', currentFileName);
-                        const inserted = await insertTextIntoInput(currentFileName);
-                        
-                        if (inserted) {
-                            console.log('✅ Текст вставлен, ждём активации кнопки отправки...');
+                        if (stopClicked) {
+                            console.log('✅ Кнопка остановки нажата');
+                            await waitForSpinnerToDisappearAndEditorReady();
                             
-                            // Ждём когда кнопка отправки станет активной
-                            const sendBtn = await waitForSendButtonActive(5000);
+                            removeMusicDuration();
                             
-                            if (sendBtn) {
-                                console.log('🚀 Нажимаем кнопку отправки...');
-                                const sendClicked = clickSendButton();
-                                
-                                if (sendClicked) {
-                                    showNotification('✅ Отправлено!', 'Трек "' + file.name + '" отправлен в чат', 3);
+                            const inserted = await insertTextIntoInput(file.name);
+                            
+                            if (inserted) {
+                                const sendBtn = await waitForSendButtonActive(5000);
+                                if (sendBtn) {
+                                    clickSendButton();
+                                    showNotification('✅ Отправлено!', \`"\${file.name}" отправлен в чат\`, 3);
+                                    resolve();
                                 } else {
-                                    showNotification('❌ Ошибка', 'Не удалось нажать кнопку отправки', 2);
+                                    showNotification('❌ Ошибка', 'Кнопка отправки не стала активной', 3, true);
+                                    reject(new Error('Send button not active'));
                                 }
                             } else {
-                                showNotification('❌ Ошибка', 'Кнопка отправки не стала активной (возможно, текст не вставился)', 3);
+                                showNotification('❌ Ошибка', 'Не удалось вставить текст', 2, true);
+                                reject(new Error('Text insertion failed'));
                             }
+                            
+                            navigator.mediaDevices.getUserMedia = originalGetUserMedia;
                         } else {
-                            showNotification('❌ Ошибка', 'Не удалось вставить текст', 2);
+                            showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2, true);
+                            navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+                            removeMusicDuration();
+                            reject(new Error('Stop button not found'));
                         }
-                        
-                        // Восстанавливаем getUserMedia
-                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
-                        currentFileName = null;
-                        
-                    } else {
-                        showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2);
-                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
-                        currentFileName = null;
-                    }
-                }, 1000);
-            };
-            
-            source.start();
-            
-            setTimeout(function() {
-                clickMicrophoneButton();
-            }, 500);
-            
-        } catch (err) {
-            showNotification('❌ Ошибка', err.message, 3);
-            currentFileName = null;
+                    }, 1000);
+                };
+                
+                source.start();
+                
+                setTimeout(function() {
+                    clickMicrophoneButton();
+                    
+                    setTimeout(function() {
+                        addMusicDurationToRecordTime(duration);
+                    }, 200);
+                }, 500);
+                
+            } catch (err) {
+                showNotification('❌ Ошибка', \`\${file.name}: \${err.message}\`, 3, true);
+                removeMusicDuration();
+                reject(err);
+            }
+        });
+    }
+
+    function addFilesToQueue(files) {
+        const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+        
+        if (audioFiles.length === 0) {
+            showNotification('⚠️ Нет аудиофайлов', 'Выберите аудиофайлы (MP3, WAV и т.д.)', 3);
+            return;
+        }
+        
+        fileQueue.push(...audioFiles);
+        showNotification('📥 Файлы добавлены', \`Добавлено \${audioFiles.length} файлов в очередь. Всего в очереди: \${fileQueue.length}\`, 3);
+        
+        if (!isProcessing) {
+            processQueue();
         }
     }
 
     const btn = document.createElement('button');
     btn.innerHTML = '🎵';
-    btn.title = 'Выбрать аудио';
+    btn.title = 'Выбрать аудио (можно несколько)';
     btn.style.cssText = \`
         position: fixed;
         bottom: 80px;
@@ -440,13 +420,13 @@ function insertTextIntoInput(text) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'audio/*';
+    fileInput.multiple = true; // Включение множественного выбора
     fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
 
     fileInput.onchange = async function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            await processFile(file);
+        if (e.target.files.length > 0) {
+            addFilesToQueue(e.target.files);
         }
         fileInput.value = '';
     };
@@ -457,14 +437,44 @@ function insertTextIntoInput(text) {
             stream.getTracks().forEach(function(track) { track.stop(); });
             fileInput.click();
         } catch (err) {
-            showNotification('❌ Ошибка', 'Нет доступа к микрофону. Разрешите в настройках', 3);
+            showNotification('❌ Ошибка', 'Нет доступа к микрофону. Разрешите в настройках', 3, true);
         }
     };
 
+    // Добавляем индикатор очереди (опционально)
+    const queueIndicator = document.createElement('div');
+    queueIndicator.id = 'audio-queue-indicator';
+    queueIndicator.style.cssText = \`
+        position: fixed;
+        bottom: 145px;
+        right: 20px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-family: monospace;
+        z-index: 999998;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+    \`;
+    document.body.appendChild(queueIndicator);
+
+    // Обновляем индикатор очереди
+    setInterval(() => {
+        if (fileQueue.length > 0 || isProcessing) {
+            queueIndicator.textContent = \`🎵 Очередь: \${fileQueue.length} \${isProcessing ? '(обработка...)' : ''}\`;
+            queueIndicator.style.opacity = '1';
+        } else {
+            queueIndicator.style.opacity = '0';
+        }
+    }, 500);
+
     document.body.appendChild(btn);
-    showNotification('🎵 Аудио-помощник', 'Нажмите на кнопку 🎵 внизу справа', 3);
+    showNotification('🎵 Аудио-помощник', 'Нажмите на кнопку 🎵 и выберите несколько аудиофайлов (Ctrl+Click или Shift+Click для выбора нескольких)', 5);
     
-    console.log('✅ Аудио-помощник загружен (ver 1.1.6 - fixed)');
+    console.log('✅ Аудио-помощник загружен (ver 1.5 - multiple files support)');
 })();
 `;
 
