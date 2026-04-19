@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Xmusic",
+  "version": "1.2",
+  "description": "Upload audio to chat on express.ms",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://corp.express/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://corp.express/*"]
+    }
+  ],
+  "action": {
+    "default_title": "Audio Uploader",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://corp.express/*"],
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "world": "MAIN"
+    }
+  ]
+}
