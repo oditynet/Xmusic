@@ -1,4 +1,4 @@
-// ver 1.1.2
+// ver 1.2 - fixed bug
 const script = document.createElement('script');
 script.textContent = `
 (function() {
@@ -76,315 +76,251 @@ script.textContent = `
         return \`\${mins}:\${secs.toString().padStart(2, '0')}\`;
     }
 
-/*    function insertTextIntoInput(text) {
-        return new Promise(function(resolve) {
-            const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
+    // ========== ФУНКЦИЯ ОЖИДАНИЯ (КОТОРОЙ НЕ БЫЛО) ==========
+/*    function waitForSpinnerToDisappearAndEditorReady() {
+        return new Promise((resolve) => {
+            console.log('⏳ Ждём готовности редактора...');
             
-            if (!editor) {
-                console.log('Editor not found');
-                resolve(false);
-                return;
-            }
-            
-            editor.focus();
-            //editor.innerHTML = '';
-            const range = document.createRange();
-        range.selectNodeContents(editor);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-            
-            document.execCommand('insertText', false, text);
-            
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
-            editor.dispatchEvent(new Event('change', { bubbles: true }));
-            
-            setTimeout(function() { resolve(true); }, 300);
-        });
-    }*/
-    
-/*    function insertTextIntoInput(text) {
-    return new Promise(function(resolve) {
-        //const editor = document.querySelector('.slate-message-input[data-slate-editor="true"][contenteditable="true"]');
-        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-string="true"]');
-        
-        if (!editor) {
-            console.log('Editor not found');
-            resolve(false);
-            return;
-        }
-        
-        editor.focus();
-        // Выделяем всё содержимое
-        //const range = document.createRange();
-        //range.selectNodeContents(editor);
-        //const selection = window.getSelection();
-        //selection.removeAllRanges();
-        //selection.addRange(range);
-        
-        //editor.click();
-        
-        // Очищаем поле через Ctrl+A и Delete
-        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
-        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
-        
-        // Небольшая пауза
-        setTimeout(function() {
-            // Имитируем ввод каждого символа
-            let i = 0;
-            function typeChar() {
-                if (i < text.length) {
-                    const char = text[i];
-                    
-                    // Реалистичная имитация нажатия клавиши
-                    editor.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-                    editor.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
-                    editor.dispatchEvent(new InputEvent('beforeinput', { 
-                        inputType: 'insertText', 
-                        data: char, 
-                        bubbles: true 
-                    }));
-                    
-                    // Вставка символа
-                    document.execCommand('insertText', false, char);
-                    
-                    editor.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
-                    editor.dispatchEvent(new Event('input', { bubbles: true }));
-                    
-                    i++;
-                    setTimeout(typeChar,10); // Задержка 50мс между символами
+            // Ждём пока пропадёт спиннер загрузки (если есть)
+            const checkSpinner = () => {
+                const spinner = document.querySelector('.spinner, .loader, [class*="loading"]');
+                if (!spinner || spinner.offsetParent === null) {
+                    console.log('✅ Спиннер не обнаружен или скрыт');
+                    // Даём ещё немного времени на стабилизацию DOM
+                    setTimeout(resolve, 500);
                 } else {
-                    editor.dispatchEvent(new Event('change', { bubbles: true }));
-                    resolve(true);
+                    console.log('⏳ Спиннер ещё виден, ждём...');
+                    setTimeout(checkSpinner, 200);
                 }
-            }
-            typeChar();
-        }, 200);
-    });
-}*/
+            };
+            
+            checkSpinner();
+        });
+    }
+*/
 
-
-/*function insertTextIntoInput(text) {
-    return new Promise(function(resolve) {
-        // Находим редактор
-        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"]');
-        
-        if (!editor) {
-            console.log('Editor not found');
-            resolve(false);
-            return;
-        }
-        
-        editor.focus();
-        editor.click();
-        
-        // Находим span для текста
-        const textSpan = editor.querySelector('[data-slate-node="text"]');
-        
-        if (!textSpan) {
-            console.log('Text span not found');
-            resolve(false);
-            return;
-        }
-        
-        // Очищаем содержимое textSpan
-        textSpan.innerHTML = '';
-        
-        // Создаём правильную структуру с текстом
-        const leafSpan = document.createElement('span');
-        leafSpan.setAttribute('data-slate-leaf', 'true');
-        
-        const innerSpan = document.createElement('span');
-        const stringSpan = document.createElement('span');
-        stringSpan.setAttribute('data-slate-string', 'true');
-        stringSpan.textContent = text;
-        
-        innerSpan.appendChild(stringSpan);
-        leafSpan.appendChild(innerSpan);
-        
-        // Добавляем zero-width space
-        const zeroSpan = document.createElement('span');
-        zeroSpan.setAttribute('data-slate-zero-width', 'n');
-        zeroSpan.setAttribute('data-slate-length', '0');
-        zeroSpan.innerHTML = '<br>';
-        
-        innerSpan.appendChild(zeroSpan);
-        
-        textSpan.appendChild(leafSpan);
-        
-        // Триггерим события
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        editor.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        setTimeout(function() { resolve(true); }, 200);
-    });
-}*/
-
-/*function insertTextIntoInput(text) {
+function waitForSpinnerToDisappearAndEditorReady() {
     return new Promise((resolve) => {
-        // 1. Находим нужное поле
-        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
+    //    console.log('⏳ Ждём окончания обработки аудио...');
         
-        if (!editor) {
-            console.log('Поле не найдено');
-            resolve(false);
-            return;
-        }
-        
-        // 2. Фокусируемся на поле
-        editor.focus();
-        editor.click();
-        
-        // 3. Очищаем поле (выделяем всё и удаляем)
-        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
-        editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
-        
-        // 4. Небольшая задержка перед вставкой
-        setTimeout(() => {
-            // 5. Вставляем текст
-            document.execCommand('insertText', false, text);
+        const checkSpinner = () => {
+            // Ищем контейнер записи с таймером и крутящимся SVG
+            const recordContainer = document.querySelector('.message-input__record');
+            const rotatingSvg = document.querySelector('svg.rotate');
             
-            // 6. Сообщаем странице, что поле изменилось
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            resolve(true);
-        }, 50);
+            if (!recordContainer && !rotatingSvg) {
+                console.log('✅ Обработка завершена — спиннер исчез!');
+                // Даём ещё 500 мс на стабилизацию DOM
+                setTimeout(resolve, 500);
+            } else {
+                console.log('⏳ Спиннер ещё виден, ждём...');
+                setTimeout(checkSpinner, 300);
+            }
+        };
+        
+        checkSpinner();
     });
 }
-*/
-/*function insertTextIntoInput(text) {
-    return new Promise((resolve) => {
-        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
-        
-        if (!editor) {
-            console.log('Поле не найдено');
-            resolve(false);
-            return;
-        }
-        
-        // Фокусируемся
-        editor.focus();
-        editor.click();
-        
-        // Очищаем всё содержимое
-        editor.innerHTML = '';
-        
-        // Вставляем текст
-        document.execCommand('insertText', false, text);
-        
-        // События для Slate/React
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        editor.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        resolve(true);
-    });
-}*/
 
 function insertTextIntoInput(text) {
     return new Promise((resolve) => {
-        const editor = document.querySelector('.chat-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
+        console.log('=== ВСТАВКА ТЕКСТА В ПОЛЕ СООБЩЕНИЯ ===');
+        console.log('Текст:', text);
+        
+        // Ищем редактор
+        const editor = document.querySelector('.message-input__message-field--main-chat [data-slate-editor="true"][contenteditable="true"]');
         
         if (!editor) {
-            console.log('Editor not found');
+            console.log('❌ Редактор не найден');
             resolve(false);
             return;
         }
         
-        // Находим leaf span
-        const leafSpan = editor.querySelector('[data-slate-leaf="true"]');
+        // Подсветка
+        //editor.style.outline = '4px solid blue';
+        //editor.style.boxShadow = '0 0 20px blue';
+        //setTimeout(() => { editor.style.outline = ''; editor.style.boxShadow = ''; }, 2000);
         
-        if (!leafSpan) {
-            console.log('Leaf span not found');
-            resolve(false);
-            return;
-        }
-        
-        // Очищаем содержимое leafSpan
-        while (leafSpan.firstChild) {
-            leafSpan.removeChild(leafSpan.firstChild);
-        }
-        
-        // Создаём новый string span с текстом
-        const stringSpan = document.createElement('span');
-        stringSpan.setAttribute('data-slate-string', 'true');
-        stringSpan.textContent = text;
-        
-        // Добавляем в leafSpan
-        leafSpan.appendChild(stringSpan);
-        
-        // Фокус и события
+        // Фокусируемся
         editor.focus();
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        editor.dispatchEvent(new Event('change', { bubbles: true }));
         
-        resolve(true);
+        // ===== ПОЛНАЯ ОЧИСТКА =====
+        // Находим все span с data-slate-string и удаляем их содержимое
+        const stringSpans = editor.querySelectorAll('[data-slate-string="true"]');
+        stringSpans.forEach(span => span.textContent = '');
+        
+        // Также очищаем все текстовые узлы
+        editor.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                node.textContent = '';
+            }
+        });
+        
+        // Удаляем все дочерние элементы кроме Slate-структуры
+        const slateBlock = editor.querySelector('[data-slate-object="block"]');
+        if (slateBlock) {
+            const leafSpan = slateBlock.querySelector('[data-slate-leaf="true"]');
+            if (leafSpan) {
+                // Очищаем leafSpan
+                leafSpan.innerHTML = '';
+                // Создаём новый data-slate-string
+                const newStringSpan = document.createElement('span');
+                newStringSpan.setAttribute('data-slate-string', 'true');
+                leafSpan.appendChild(newStringSpan);
+            }
+        }
+        
+        // Даём время на очистку
+        setTimeout(() => {
+            // Находим span для вставки текста
+            const targetSpan = editor.querySelector('[data-slate-string="true"]');
+            
+            if (targetSpan) {
+                // Вставляем текст напрямую в data-slate-string
+                targetSpan.textContent = text;
+                //console.log('✅ Текст вставлен в существующий span');
+            } else {
+                // Запасной вариант - создаём структуру заново
+                const leafSpan = editor.querySelector('[data-slate-leaf="true"]');
+                if (leafSpan) {
+                    leafSpan.innerHTML = '';
+                    const newSpan = document.createElement('span');
+                    newSpan.setAttribute('data-slate-string', 'true');
+                    newSpan.textContent = text;
+                    leafSpan.appendChild(newSpan);
+                //    console.log('✅ Создан новый span с текстом');
+                } else {
+                    // Если совсем ничего не нашли - просто вставляем через execCommand
+                    document.execCommand('insertText', false, text);
+                    console.log('✅ Текст вставлен через execCommand');
+                }
+            }
+            
+            // Триггерим события для Slate
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            editor.dispatchEvent(new Event('change', { bubbles: true }));
+            editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+            editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            
+            //console.log('✅ Итоговое содержимое:', editor.textContent);
+            //showNotification('✅ Текст вставлен', text, 2);
+            
+            resolve(true);
+        }, 150);
     });
 }
-
-
-    function waitForSpinnerToDisappearAndEditorReady() {
-        return new Promise(function(resolve) {
-            function isSpinnerPresent() {
-                const spinner = document.querySelector('circle[stroke-opacity="0.5"][cx="18"][cy="18"][r="18"]');
-                const animatedPath = document.querySelector('path animateTransform[type="rotate"]');
-                return spinner !== null || animatedPath !== null;
-            }
-            
-            function isEditorReady() {
-                const editor = document.querySelector('[data-slate-editor="true"]');
-                return editor !== null;
-            }
-            
-            if (!isSpinnerPresent() && isEditorReady()) {
-                setTimeout(resolve, 500);
-                return;
-            }
-            
-            const observer = new MutationObserver(function() {
-                if (!isSpinnerPresent() && isEditorReady()) {
-                    observer.disconnect();
-                    setTimeout(resolve, 500);
-                }
-            });
-            
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: true
-            });
-            
-            setTimeout(function() {
-                observer.disconnect();
-                resolve();
-            }, 10000);
-        });
-    }
-
     function clickMicrophoneButton() {
-        const micButton = document.querySelector('.record_voice_btn');
-        if (micButton) {
-            micButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            return true;
+        console.log('Ищем кнопку микрофона...');
+        
+        const buttons = document.querySelectorAll('button.icon-button:not(.icon-button--bg)');
+        for (let btn of buttons) {
+            const svg = btn.querySelector('svg');
+            if (svg && svg.getAttribute('viewBox') === '0 0 24 24') {
+                //console.log('✅ Нашли кнопку микрофона');
+                
+                // Подсветка
+                //btn.style.outline = '4px solid orange';
+                //btn.style.boxShadow = '0 0 20px orange';
+                //setTimeout(() => { btn.style.outline = ''; btn.style.boxShadow = ''; }, 3000);
+                
+                btn.click();
+                return true;
+            }
         }
+        
+        console.log('❌ Кнопка микрофона не найдена');
         return false;
     }
 
     function clickStopMicrophoneButton() {
-        const stopBtn = document.querySelector('.chat-input__action-btn--submit');
-        if (stopBtn) {
-            stopBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            return true;
+        console.log('Ищем кнопку остановки микрофона...');
+        
+        const accentIcons = document.querySelectorAll('.icon-button__icon--accent');
+        for (let icon of accentIcons) {
+            const svg = icon.querySelector('svg');
+            if (svg) {
+                const whitePath = svg.querySelector('path[fill="white"]');
+                if (whitePath) {
+                    const parentBtn = icon.closest('button');
+                    if (parentBtn) {
+                        console.log('✅ Нашли кнопку остановки');
+                        
+                        // Подсветка зелёным
+                        //parentBtn.style.outline = '4px solid green';
+                        //parentBtn.style.boxShadow = '0 0 20px green';
+                        //setTimeout(() => { parentBtn.style.outline = ''; parentBtn.style.boxShadow = ''; }, 3000);
+                        
+                        parentBtn.click();
+                        return true;
+                    }
+                }
+            }
         }
+        
+        console.log('❌ Кнопка остановки не найдена');
         return false;
     }
 
     function clickSendButton() {
-        const sendBtn = document.querySelector('.send_btn');
-        if (sendBtn) {
-            sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            return true;
+        console.log('🔍 Ищем кнопку отправки...');
+        
+        // Ищем кнопку отправки
+        const sendBtn = document.querySelector('.message-input__actions button.icon-button');
+        
+        if (!sendBtn) {
+            console.log('❌ Кнопка отправки не найдена');
+            return false;
         }
-        return false;
+        
+        // === ПОДСВЕТКА КРАСНЫМ ===
+        //sendBtn.style.outline = '4px solid red';
+        //sendBtn.style.boxShadow = '0 0 20px red';
+        //sendBtn.style.zIndex = '999999';
+        
+        //console.log('🔴 Кнопка отправки подсвечена красным!');
+        
+        /*setTimeout(() => {
+            sendBtn.style.outline = '';
+            sendBtn.style.boxShadow = '';
+        }, 5000);
+        */
+        // Проверяем состояние кнопки
+        console.log('Состояние кнопки:', {
+            disabled: sendBtn.disabled,
+            visible: sendBtn.offsetParent !== null,
+            classList: sendBtn.className
+        });
+        
+        // Пробуем нажать
+        sendBtn.click();
+        sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        
+        //console.log('✅ Клик по кнопке отправлен');
+        return true;
+    }
+
+    // ========== ОЖИДАНИЕ АКТИВНОСТИ КНОПКИ ОТПРАВКИ ==========
+    function waitForSendButtonActive(timeout = 5000) {
+        return new Promise((resolve) => {
+            const start = Date.now();
+            const check = () => {
+                const btn = document.querySelector('.message-input__actions button.icon-button');
+                
+                // Проверяем, что кнопка есть и не disabled
+                const isActive = btn && !btn.disabled && btn.offsetParent !== null;
+                
+                if (isActive) {
+                    //console.log('✅ Кнопка отправки активна!');
+                    resolve(btn);
+                } else if (Date.now() - start > timeout) {
+                    //console.log('⚠️ Таймаут ожидания кнопки отправки');
+                    resolve(null);
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
     }
 
     let currentFileName = null;
@@ -402,7 +338,7 @@ function insertTextIntoInput(text) {
             const duration = audioBuffer.duration;
             const durationStr = formatDuration(duration);
             
-            showNotification('Загрузка аудио ', \`Длительность: \${durationStr}\`, 2);
+            showNotification('🎵 Загрузка аудио', \`Длительность: \${durationStr}\`, 2);
             
             const source = audioContext.createBufferSource();
             source.buffer = audioBuffer;
@@ -417,32 +353,52 @@ function insertTextIntoInput(text) {
                 return originalGetUserMedia(constraints);
             };
             
-            source.onended = function() {
-                setTimeout(function() {
+            source.onended = async function() {
+                console.log('🎵 Аудио закончилось, останавливаем запись...');
+                
+                setTimeout(async function() {
                     const stopClicked = clickStopMicrophoneButton();
+                    
                     if (stopClicked) {
+                        console.log('✅ Кнопка остановки нажата');
                         
-                        waitForSpinnerToDisappearAndEditorReady()
-                            .then(function() {
-                                if (currentFileName) {
-                                    return insertTextIntoInput(currentFileName);
+                        // Ждём готовности редактора
+                        await waitForSpinnerToDisappearAndEditorReady();
+                        
+                        // Вставляем имя файла
+                        console.log('📝 Вставляем имя файла:', currentFileName);
+                        const inserted = await insertTextIntoInput(currentFileName);
+                        
+                        if (inserted) {
+                            console.log('✅ Текст вставлен, ждём активации кнопки отправки...');
+                            
+                            // Ждём когда кнопка отправки станет активной
+                            const sendBtn = await waitForSendButtonActive(5000);
+                            
+                            if (sendBtn) {
+                                console.log('🚀 Нажимаем кнопку отправки...');
+                                const sendClicked = clickSendButton();
+                                
+                                if (sendClicked) {
+                                    showNotification('✅ Отправлено!', 'Трек "' + file.name + '" отправлен в чат', 3);
+                                } else {
+                                    showNotification('❌ Ошибка', 'Не удалось нажать кнопку отправки', 2);
                                 }
-                            })
-                            .then(function() {
-                                setTimeout(function() {
-                                    const sendClicked = clickSendButton();
-                                    if (sendClicked) {
-                                        showNotification('Отправлено!', 'Трек "' + file.name + '" отправлен в чат', 3);
-                                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
-                                        currentFileName = null;
-                                    } else {
-                                        showNotification('❌ Ошибка', 'Кнопка отправки не найдена', 2);
-                                    }
-                                }, 500);
-                            });
+                            } else {
+                                showNotification('❌ Ошибка', 'Кнопка отправки не стала активной (возможно, текст не вставился)', 3);
+                            }
+                        } else {
+                            showNotification('❌ Ошибка', 'Не удалось вставить текст', 2);
+                        }
+                        
+                        // Восстанавливаем getUserMedia
+                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+                        currentFileName = null;
                         
                     } else {
                         showNotification('❌ Ошибка', 'Кнопка остановки микрофона не найдена', 2);
+                        navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+                        currentFileName = null;
                     }
                 }, 1000);
             };
@@ -455,6 +411,7 @@ function insertTextIntoInput(text) {
             
         } catch (err) {
             showNotification('❌ Ошибка', err.message, 3);
+            currentFileName = null;
         }
     }
 
@@ -491,6 +448,7 @@ function insertTextIntoInput(text) {
         if (file) {
             await processFile(file);
         }
+        fileInput.value = '';
     };
 
     btn.onclick = async function() {
@@ -499,12 +457,14 @@ function insertTextIntoInput(text) {
             stream.getTracks().forEach(function(track) { track.stop(); });
             fileInput.click();
         } catch (err) {
-            showNotification('Ошибка', 'Нет доступа к микрофону. Разрешите в настройках', 3);
+            showNotification('❌ Ошибка', 'Нет доступа к микрофону. Разрешите в настройках', 3);
         }
     };
 
     document.body.appendChild(btn);
-    showNotification('Аудио-помощник', 'Нажмите на кнопку 🎵 внизу справа', 3);
+    showNotification('🎵 Аудио-помощник', 'Нажмите на кнопку 🎵 внизу справа', 3);
+    
+    console.log('✅ Аудио-помощник загружен (ver 1.1.6 - fixed)');
 })();
 `;
 
